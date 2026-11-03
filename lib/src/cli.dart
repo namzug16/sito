@@ -62,6 +62,11 @@ ArgParser _buildArgumentParser() {
       help: 'Reload the browser when files change.',
     )
     ..addFlag(
+      'open',
+      negatable: false,
+      help: 'Open the site in the default browser.',
+    )
+    ..addFlag(
       'help',
       abbr: 'h',
       negatable: false,
@@ -98,6 +103,10 @@ Future<int> _serve(ArgResults parsedArguments) async {
       'Warning: Live reload reserves $reloadEndpointPath, which takes '
       'priority over your __sito directory.',
     );
+  }
+
+  if (parsedArguments.flag('open')) {
+    unawaited(_openBrowser(_browserUrl(server, host)));
   }
 
   await terminationRequested;
@@ -194,6 +203,21 @@ Future<List<String>> _networkUrls(SitoServer server, String host) async {
           port: server.port,
         ).toString(),
   ];
+}
+
+Future<void> _openBrowser(String url) async {
+  final (executable, arguments) = switch (Platform.operatingSystem) {
+    'macos' => ('open', [url]),
+    'windows' => ('rundll32', ['url.dll,FileProtocolHandler', url]),
+    _ => ('xdg-open', [url]),
+  };
+  const warning = 'Warning: Could not open the browser. Visit the URL above.';
+  try {
+    final result = await Process.run(executable, arguments);
+    if (result.exitCode != 0) stderr.writeln(warning);
+  } on ProcessException {
+    stderr.writeln(warning);
+  }
 }
 
 Future<void> _waitForTerminationSignal() {

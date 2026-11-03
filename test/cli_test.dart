@@ -168,6 +168,17 @@ void main() {
     expect(started.errorLines.join(), contains('__sito'));
   });
 
+  test('keeps serving when the browser cannot be opened', () async {
+    final port = await findFreePort();
+    final started = await startSito(
+      ['-p', '$port', '--open'],
+      environment: {'PATH': ''},
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    expect(started.errorLines.join(), contains('Could not open the browser'));
+    expect(await fetch(port), '<h1>home</h1>');
+  });
+
   test('warns when reachable from the network', () async {
     final port = await findFreePort();
     final started = await startSito(['-p', '$port', '--host', '0.0.0.0']);
