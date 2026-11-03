@@ -60,7 +60,8 @@ void main() {
   });
 
   // Exercises the per-directory strategy that Linux uses, on every platform.
-  for (final watchEachDirectory in [false, true]) {
+  // Linux has no recursive watching, so the other strategy cannot run there.
+  for (final watchEachDirectory in [if (!Platform.isLinux) false, true]) {
     group('LiveReload with watchEachDirectory=$watchEachDirectory', () {
       late Directory sandbox;
       late String rootPath;
