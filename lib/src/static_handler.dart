@@ -3,14 +3,17 @@ import 'dart:io';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 
+import 'reload.dart';
+
 const _unsatisfiableByteRange = (firstByte: -1, lastByte: -1);
 
 /// Serves files below [resolvedRootPath], which must already have its symbolic
 /// links resolved so that containment checks compare like with like.
 class StaticHandler {
-  StaticHandler(this.resolvedRootPath);
+  StaticHandler(this.resolvedRootPath, {this.liveReloadEnabled = false});
 
   final String resolvedRootPath;
+  final bool liveReloadEnabled;
 
   Future<void> handleRequest(HttpRequest request) async {
     final response = request.response;
@@ -102,6 +105,13 @@ class StaticHandler {
     } on FileSystemException {
       response.headers.removeAll(HttpHeaders.contentTypeHeader);
       return _respondWithStatus(response, HttpStatus.forbidden);
+    }
+
+    if (liveReloadEnabled && mediaType == 'text/html') {
+      final injectedHtml = injectReloadScript(await file.readAsBytes());
+      response.contentLength = injectedHtml.length;
+      if (request.method == 'GET') response.add(injectedHtml);
+      return response.close();
     }
 
     final fileLength = await file.length();

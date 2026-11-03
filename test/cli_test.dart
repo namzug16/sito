@@ -159,11 +159,20 @@ void main() {
     expect(await fetch(port), 'public');
   });
 
+  test('warns about a __sito directory under --reload', () async {
+    Directory(p.join(rootPath, '__sito')).createSync();
+    final port = await findFreePort();
+    final started = await startSito(['-p', '$port', '--reload']);
+    expect(started.banner, contains('Reload:   enabled'));
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    expect(started.errorLines.join(), contains('__sito'));
+  });
+
   test('warns when reachable from the network', () async {
     final port = await findFreePort();
     final started = await startSito(['-p', '$port', '--host', '0.0.0.0']);
     expect(started.banner, contains('reachable from other devices'));
-    expect(started.banner, isNot(contains('disabled')));
+    expect(started.banner, isNot(contains('Network:  disabled')));
   });
 
   test('shuts down cleanly on termination', () async {

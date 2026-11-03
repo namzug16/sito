@@ -1,16 +1,18 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'reload.dart';
 import 'static_handler.dart';
 
 const _loopbackHostNames = {'localhost', '127.0.0.1', '[::1]'};
 
 /// A running static server for the directory at [resolvedRootPath].
 class SitoServer {
-  SitoServer._(this._httpServer, this._staticHandler);
+  SitoServer._(this._httpServer, this._staticHandler, this._liveReload);
 
   final HttpServer _httpServer;
   final StaticHandler _staticHandler;
+  final LiveReload? _liveReload;
 
   /// Binds the server. [host] defaults to loopback so nothing is exposed to
   /// the network unless the user asks for it.
@@ -21,10 +23,17 @@ class SitoServer {
     required String resolvedRootPath,
     required int port,
     String host = '127.0.0.1',
+    bool liveReloadEnabled = false,
   }) async {
     final httpServer = await HttpServer.bind(host, port);
     httpServer.defaultResponseHeaders.clear();
-    final server = SitoServer._(httpServer, StaticHandler(resolvedRootPath));
+    final liveReload = liveReloadEnabled ? LiveReload(resolvedRootPath) : null;
+    await liveReload?.start();
+    final server = SitoServer._(
+      httpServer,
+      StaticHandler(resolvedRootPath, liveReloadEnabled: liveReloadEnabled),
+      liveReload,
+    );
     httpServer.listen(server._handleRequestSafely);
     return server;
   }
@@ -33,7 +42,10 @@ class SitoServer {
 
   int get port => _httpServer.port;
 
-  Future<void> close() => _httpServer.close(force: true);
+  Future<void> close() async {
+    await _liveReload?.close();
+    await _httpServer.close(force: true);
+  }
 
   Future<void> _handleRequestSafely(HttpRequest request) async {
     try {
@@ -48,6 +60,10 @@ class SitoServer {
     if (!_isAllowedHost(request)) {
       request.response.statusCode = HttpStatus.forbidden;
       return request.response.close();
+    }
+    final liveReload = _liveReload;
+    if (liveReload != null && request.uri.path == reloadEndpointPath) {
+      return liveReload.acceptBrowser(request);
     }
     return _staticHandler.handleRequest(request);
   }

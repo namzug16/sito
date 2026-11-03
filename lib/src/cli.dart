@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:args/args.dart';
+import 'package:path/path.dart' as p;
 
+import 'reload.dart';
 import 'server.dart';
 
 const sitoVersion = '0.1.0';
@@ -55,6 +57,11 @@ ArgParser _buildArgumentParser() {
       help: 'Interface to bind to. Use 0.0.0.0 to allow other devices.',
     )
     ..addFlag(
+      'reload',
+      negatable: false,
+      help: 'Reload the browser when files change.',
+    )
+    ..addFlag(
       'help',
       abbr: 'h',
       negatable: false,
@@ -67,6 +74,7 @@ Future<int> _serve(ArgResults parsedArguments) async {
   final port = _parsePort(parsedArguments.option('port')!);
   final host = parsedArguments.option('host')!;
   final resolvedRootPath = await _resolveRootDirectory(parsedArguments.rest);
+  final liveReloadEnabled = parsedArguments.flag('reload');
 
   final SitoServer server;
   try {
@@ -74,6 +82,7 @@ Future<int> _serve(ArgResults parsedArguments) async {
       resolvedRootPath: resolvedRootPath,
       port: port,
       host: host,
+      liveReloadEnabled: liveReloadEnabled,
     );
   } on SocketException catch (failure) {
     stderr.writeln(_describeBindFailure(failure, host, port));
@@ -82,7 +91,14 @@ Future<int> _serve(ArgResults parsedArguments) async {
 
   // Watch before printing so a signal right after the banner stops cleanly.
   final terminationRequested = _waitForTerminationSignal();
-  await _printBanner(server, host, resolvedRootPath);
+  await _printBanner(server, host, resolvedRootPath, liveReloadEnabled);
+  if (liveReloadEnabled &&
+      Directory(p.join(resolvedRootPath, '__sito')).existsSync()) {
+    stderr.writeln(
+      'Warning: Live reload reserves $reloadEndpointPath, which takes '
+      'priority over your __sito directory.',
+    );
+  }
 
   await terminationRequested;
   await server.close();
@@ -131,6 +147,7 @@ Future<void> _printBanner(
   SitoServer server,
   String host,
   String resolvedRootPath,
+  bool liveReloadEnabled,
 ) async {
   print('sito v$sitoVersion\n');
   print('  Local:    ${_browserUrl(server, host)}');
@@ -142,6 +159,7 @@ Future<void> _printBanner(
     print('  Network:  $networkUrl');
   }
   print('  Root:     $resolvedRootPath');
+  print('  Reload:   ${liveReloadEnabled ? 'enabled' : 'disabled'}');
   if (networkUrls.isNotEmpty) {
     print('\n  Warning: reachable from other devices on your network.');
   }
