@@ -2,7 +2,7 @@ PREFIX ?= $(HOME)/.local
 BIN_DIR := $(PREFIX)/bin
 EXECUTABLE := build/sito
 
-.PHONY: build install uninstall test clean
+.PHONY: build install uninstall test publish-check publish clean
 
 build:
 	dart pub get
@@ -22,6 +22,13 @@ uninstall:
 test:
 	dart analyze
 	dart test
+
+publish-check: test
+	dart pub publish --dry-run
+
+# pub.dev versions are permanent, so dart pub publish asks for confirmation.
+publish: publish-check
+	dart pub publish
 
 clean:
 	rm -rf build
