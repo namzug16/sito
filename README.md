@@ -25,8 +25,6 @@ make install PREFIX=/usr/local
 make uninstall
 ```
 
-Or download a binary from the GitHub releases page, place it on your `PATH`, and rename it to `sito`. Binaries do not need Dart installed.
-
 ## Usage
 
 ```text
@@ -81,8 +79,6 @@ dart run bin/sito.dart
 make test
 make build                 # writes build/sito
 ```
-
-Pushing a `v*` tag builds macOS, Linux and Windows binaries and attaches them to a GitHub release.
 
 ## License
 
