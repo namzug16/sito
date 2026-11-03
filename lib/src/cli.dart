@@ -182,7 +182,9 @@ Future<List<String>> _networkUrls(SitoServer server, String host) async {
   if (!_isBoundToAllInterfaces(server)) {
     return [Uri(scheme: 'http', host: host, port: server.port).toString()];
   }
-  final networkInterfaces = await NetworkInterface.list();
+  final networkInterfaces = await NetworkInterface.list(
+    type: InternetAddressType.IPv4,
+  );
   return [
     for (final networkInterface in networkInterfaces)
       for (final interfaceAddress in networkInterface.addresses)

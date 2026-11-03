@@ -173,6 +173,7 @@ void main() {
     final started = await startSito(['-p', '$port', '--host', '0.0.0.0']);
     expect(started.banner, contains('reachable from other devices'));
     expect(started.banner, isNot(contains('Network:  disabled')));
+    expect(started.banner, isNot(contains('http://[')));
   });
 
   test('shuts down cleanly on termination', () async {
