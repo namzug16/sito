@@ -177,7 +177,7 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 500));
     expect(started.errorLines.join(), contains('Could not open the browser'));
     expect(await fetch(port), '<h1>home</h1>');
-  });
+  }, skip: Platform.isWindows ? 'Windows finds rundll32 without PATH' : false);
 
   test('warns when reachable from the network', () async {
     final port = await findFreePort();
