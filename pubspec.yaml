@@ -1,6 +1,7 @@
 name: sito
 description: A lightweight, zero-configuration static development server.
 version: 0.1.0
+repository: https://github.com/namzug16/sito
 
 environment:
   sdk: ^3.13.4

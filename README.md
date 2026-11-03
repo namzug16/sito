@@ -11,7 +11,13 @@ Then open <http://localhost:3000>.
 
 ## Install
 
-From a checkout, with the Dart SDK:
+With the Dart SDK, making sure `~/.pub-cache/bin` is on your `PATH`:
+
+```bash
+dart pub global activate --source git https://github.com/namzug16/sito
+```
+
+As a native executable, from a checkout:
 
 ```bash
 make install               # installs to ~/.local/bin/sito
